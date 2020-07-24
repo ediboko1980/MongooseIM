@@ -331,6 +331,7 @@ reload_cluster_dryrun() ->
     reload_nodes(reload_cluster_dryrun, all_cluster_nodes(), true).
 
 reload_nodes(Command, Nodes, DryRun) ->
+    mongoose_logs:set_global_loglevel(critical),
     NodeStates = config_states(Nodes),
     ReloadContext = mongoose_config_reload:states_to_reloading_context(NodeStates),
     FailedChecks = mongoose_config_reload:context_to_failed_checks(ReloadContext),
@@ -338,10 +339,13 @@ reload_nodes(Command, Nodes, DryRun) ->
         [] ->
             Changes = mongoose_config_reload:context_to_changes_to_apply(ReloadContext),
             apply_reload_changes(DryRun, Nodes, ReloadContext, Changes),
+            mongoose_logs:set_global_loglevel(warning),
             {ok, "done"};
         [no_update_required] ->
+            mongoose_logs:set_global_loglevel(warning),
             {ok, "No update required"};
         [_|_] ->
+            mongoose_logs:set_global_loglevel(warning),
             Filename = dump_reload_state(Command, ReloadContext),
             error(#{reason => reload_failed,
                     nodes => Nodes,
